@@ -1,0 +1,234 @@
+openapi: "3.1.0"
+info:
+  title: EXIF Microservice API
+  version: "1.0.0"
+  description: REST API for image metadata extraction, GPS writing, and location candidate suggestions.
+
+servers:
+  - url: http://localhost:5171
+    description: Local development
+
+paths:
+  /exif/health:
+    get:
+      summary: Service health check
+      operationId: getHealth
+      responses:
+        "200":
+          description: Service health status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+                  version:
+                    type: string
+                    example: "1.0.0"
+                  exiftoolAvailable:
+                    type: boolean
+                  databaseConnected:
+                    type: boolean
+                  uptime:
+                    type: string
+                    example: "2h30m"
+
+  /exif/metadata:
+    get:
+      summary: Read full EXIF metadata from file
+      operationId: getMetadata
+      parameters:
+        - name: path
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Absolute file path
+      responses:
+        "200":
+          description: EXIF metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MetadataResponse"
+        "400":
+          description: Missing path parameter
+        "500":
+          description: Extraction error
+
+  /exif/missing:
+    get:
+      summary: Paginated list of images missing EXIF date or GPS
+      operationId: getMissingExif
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: Paginated list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MissingExifResponse"
+
+  /exif/gps:
+    put:
+      summary: Write GPS coordinates to a single image
+      operationId: updateGPS
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GPSRequest"
+      responses:
+        "200":
+          description: GPS written successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GPSResponse"
+        "500":
+          description: Write error
+
+  /exif/gps/batch:
+    put:
+      summary: Batch GPS write to multiple images
+      operationId: batchUpdateGPS
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GPSBatchRequest"
+      responses:
+        "200":
+          description: Batch result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GPSBatchResponse"
+
+  /exif/location-candidates:
+    get:
+      summary: Suggest locations from same-day photos with GPS
+      operationId: getLocationCandidates
+      parameters:
+        - name: path
+          in: query
+          schema:
+            type: string
+          description: Image file path (uses its date_taken)
+        - name: date
+          in: query
+          schema:
+            type: string
+          description: Date in YYYY-MM-DD format
+      responses:
+        "200":
+          description: Location candidates
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LocationCandidatesResponse"
+
+components:
+  schemas:
+    MetadataResponse:
+      type: object
+      properties:
+        width: { type: integer }
+        height: { type: integer }
+        cameraModel: { type: string }
+        lensModel: { type: string }
+        iso: { type: integer }
+        aperture: { type: string }
+        shutterSpeed: { type: string }
+        focalLength: { type: string }
+        dateTaken: { type: string, format: date-time }
+        orientation: { type: integer }
+        colorSpace: { type: string }
+        software: { type: string }
+        gpsLatitude: { type: number }
+        gpsLongitude: { type: number }
+
+    MissingExifResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: integer }
+              path: { type: string }
+              fileName: { type: string }
+              dirPath: { type: string }
+              size: { type: integer }
+              missingDate: { type: boolean }
+              missingGps: { type: boolean }
+        totalItems: { type: integer }
+        currentPage: { type: integer }
+        pageSize: { type: integer }
+
+    GPSRequest:
+      type: object
+      required: [path]
+      properties:
+        path: { type: string }
+        latitude: { type: number }
+        longitude: { type: number }
+
+    GPSResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        latitude: { type: number }
+        longitude: { type: number }
+
+    GPSBatchRequest:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            required: [path]
+            properties:
+              path: { type: string }
+              latitude: { type: number }
+              longitude: { type: number }
+
+    GPSBatchResponse:
+      type: object
+      properties:
+        success: { type: integer }
+        failed: { type: integer }
+        failedFiles:
+          type: array
+          items: { type: string }
+
+    LocationCandidatesResponse:
+      type: object
+      properties:
+        candidates:
+          type: array
+          items:
+            type: object
+            properties:
+              lat: { type: number }
+              lng: { type: number }
+              nameLocal: { type: string }
+              nameEng: { type: string }
+              photoCount: { type: integer }
