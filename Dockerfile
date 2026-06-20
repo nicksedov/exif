@@ -16,7 +16,7 @@ FROM alpine:3.24
 
 RUN apk add --no-cache \
     perl \
-    perl-image-exiftool \
+    exiftool \
     ca-certificates \
     tzdata
 
