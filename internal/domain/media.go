@@ -2,17 +2,6 @@ package domain
 
 import "time"
 
-// ImageFile represents an image file in the database
-type ImageFile struct {
-	ID        uint      `gorm:"primaryKey" json:"id"`
-	Path      string    `gorm:"uniqueIndex;not null" json:"path"`
-	Size      int64     `gorm:"not null;index:idx_size_hash" json:"size"`
-	Hash      string    `gorm:"not null;index:idx_size_hash" json:"hash"`
-	ModTime   time.Time `gorm:"not null" json:"modTime"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
-}
-
 // ImageMetadata stores extracted EXIF metadata for an image.
 // Geolocation is resolved via GeolocationRef -> GeolocationCache (Nominatim-backed).
 type ImageMetadata struct {

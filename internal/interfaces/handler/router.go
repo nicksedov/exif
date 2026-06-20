@@ -1,17 +1,13 @@
 package handler
 
 import (
-	"fmt"
 	"math"
 	"net/http"
 	"path/filepath"
 	"slices"
-	"strconv"
-	"strings"
 	"time"
 
 	"exif-service/internal/application"
-	"exif-service/internal/domain"
 	"exif-service/internal/interfaces/dto"
 
 	"github.com/gin-gonic/gin"
@@ -94,64 +90,6 @@ func (h *Handler) HandleGetMetadata(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-// HandleGetMissing returns paginated images missing EXIF date or GPS.
-func (h *Handler) HandleGetMissing(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "50"))
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 || pageSize > 200 {
-		pageSize = 50
-	}
-	offset := (page - 1) * pageSize
-
-	var totalItems int64
-	h.db.Table("image_files").
-		Select("image_files.*, image_metadata.date_taken, image_metadata.geolocation_ref").
-		Joins("LEFT JOIN image_metadata ON image_metadata.image_file_id = image_files.id").
-		Where("image_metadata.date_taken IS NULL OR image_metadata.geolocation_ref IS NULL").
-		Count(&totalItems)
-
-	type imageWithMetadata struct {
-		ID             uint
-		Path           string
-		Size           int64
-		DateTaken      *time.Time
-		GeolocationRef *uint
-	}
-
-	var results []imageWithMetadata
-	h.db.Table("image_files").
-		Select("image_files.id, image_files.path, image_files.size, image_metadata.date_taken, image_metadata.geolocation_ref").
-		Joins("LEFT JOIN image_metadata ON image_metadata.image_file_id = image_files.id").
-		Where("image_metadata.date_taken IS NULL OR image_metadata.geolocation_ref IS NULL").
-		Order("image_files.id DESC").
-		Offset(offset).
-		Limit(pageSize).
-		Find(&results)
-
-	items := make([]dto.MissingExifItem, len(results))
-	for i, r := range results {
-		items[i] = dto.MissingExifItem{
-			ID:          r.ID,
-			Path:        r.Path,
-			FileName:    filepath.Base(r.Path),
-			DirPath:     filepath.Dir(r.Path),
-			Size:        r.Size,
-			MissingDate: r.DateTaken == nil,
-			MissingGps:  r.GeolocationRef == nil,
-		}
-	}
-
-	c.JSON(http.StatusOK, dto.MissingExifResponse{
-		Items:       items,
-		TotalItems:  totalItems,
-		CurrentPage: page,
-		PageSize:    pageSize,
-	})
-}
-
 // HandleUpdateGPS writes GPS coordinates to a single image file.
 func (h *Handler) HandleUpdateGPS(c *gin.Context) {
 	var req dto.GPSRequest
@@ -202,42 +140,21 @@ func (h *Handler) HandleBatchUpdateGPS(c *gin.Context) {
 }
 
 // HandleGetLocationCandidates returns location suggestions from same-day photos.
+// Requires a date parameter (YYYY-MM-DD). The external service is responsible for
+// resolving file paths to dates — this endpoint only queries image_metadata + geolocation_caches.
 func (h *Handler) HandleGetLocationCandidates(c *gin.Context) {
-	path := c.Query("path")
 	dateParam := c.Query("date")
-
-	if path == "" && dateParam == "" {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "path or date query parameter is required"})
+	if dateParam == "" {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "date query parameter is required (YYYY-MM-DD)"})
 		return
 	}
 
-	var dateStr string
-	var excludePath string
-
-	if path != "" {
-		var imageFile domain.ImageFile
-		if result := h.db.Where("path = ?", path).First(&imageFile); result.Error != nil {
-			c.JSON(http.StatusOK, dto.LocationCandidatesResponse{Candidates: []dto.LocationCandidate{}})
-			return
-		}
-
-		var meta domain.ImageMetadata
-		if result := h.db.Where("image_file_id = ?", imageFile.ID).First(&meta); result.Error != nil || meta.DateTaken == nil {
-			c.JSON(http.StatusOK, dto.LocationCandidatesResponse{Candidates: []dto.LocationCandidate{}})
-			return
-		}
-
-		dateStr = meta.DateTaken.Format("2006-01-02")
-		excludePath = path
-	} else {
-		if _, err := time.Parse("2006-01-02", dateParam); err != nil {
-			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid date format, expected YYYY-MM-DD"})
-			return
-		}
-		dateStr = dateParam
+	if _, err := time.Parse("2006-01-02", dateParam); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid date format, expected YYYY-MM-DD"})
+		return
 	}
 
-	targetDate, _ := time.Parse("2006-01-02", dateStr)
+	targetDate, _ := time.Parse("2006-01-02", dateParam)
 	nextDay := targetDate.AddDate(0, 0, 1)
 
 	type gpsRow struct {
@@ -245,20 +162,15 @@ func (h *Handler) HandleGetLocationCandidates(c *gin.Context) {
 		GPSLongitude float64
 		NameLocal    string
 		NameEng      string
-		FilePath     string
 	}
 
 	var rows []gpsRow
-	query := h.db.Table("image_metadata").
-		Select("geolocation_caches.gps_latitude, geolocation_caches.gps_longitude, geolocation_caches.name_local, geolocation_caches.name_eng, image_files.path as file_path").
-		Joins("JOIN image_files ON image_files.id = image_metadata.image_file_id").
+	h.db.Table("image_metadata").
+		Select("geolocation_caches.gps_latitude, geolocation_caches.gps_longitude, geolocation_caches.name_local, geolocation_caches.name_eng").
 		Joins("JOIN geolocation_caches ON geolocation_caches.id = image_metadata.geolocation_ref").
-		Where("image_metadata.date_taken >= ? AND image_metadata.date_taken < ?", targetDate, nextDay)
-
-	if excludePath != "" {
-		query = query.Where("image_files.path != ?", excludePath)
-	}
-	query.Limit(200).Find(&rows)
+		Where("image_metadata.date_taken >= ? AND image_metadata.date_taken < ?", targetDate, nextDay).
+		Limit(200).
+		Find(&rows)
 
 	if len(rows) == 0 {
 		c.JSON(http.StatusOK, dto.LocationCandidatesResponse{Candidates: []dto.LocationCandidate{}})
@@ -346,15 +258,10 @@ func SetupRouter(db *gorm.DB, exifSvc *application.ExifService, gpsWriter *appli
 	{
 		exif.GET("/health", h.HandleHealth)
 		exif.GET("/metadata", h.HandleGetMetadata)
-		exif.GET("/missing", h.HandleGetMissing)
 		exif.PUT("/gps", h.HandleUpdateGPS)
 		exif.PUT("/gps/batch", h.HandleBatchUpdateGPS)
 		exif.GET("/location-candidates", h.HandleGetLocationCandidates)
 	}
-
-	// Suppress unused import warnings
-	_ = fmt.Sprintf
-	_ = strings.TrimSpace
 
 	return r
 }

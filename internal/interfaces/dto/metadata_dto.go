@@ -27,25 +27,6 @@ type MetadataResponse struct {
 	GPSLongitude *float64 `json:"gpsLongitude,omitempty"`
 }
 
-// MissingExifItem represents an image missing EXIF data
-type MissingExifItem struct {
-	ID          uint   `json:"id"`
-	Path        string `json:"path"`
-	FileName    string `json:"fileName"`
-	DirPath     string `json:"dirPath"`
-	Size        int64  `json:"size"`
-	MissingDate bool   `json:"missingDate"`
-	MissingGps  bool   `json:"missingGps"`
-}
-
-// MissingExifResponse is the JSON response for GET /exif/missing
-type MissingExifResponse struct {
-	Items       []MissingExifItem `json:"items"`
-	TotalItems  int64             `json:"totalItems"`
-	CurrentPage int               `json:"currentPage"`
-	PageSize    int               `json:"pageSize"`
-}
-
 // GPSRequest is the JSON request for PUT /exif/gps
 type GPSRequest struct {
 	Path      string  `json:"path" binding:"required"`

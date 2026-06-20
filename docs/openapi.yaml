@@ -58,29 +58,6 @@ paths:
         "500":
           description: Extraction error
 
-  /exif/missing:
-    get:
-      summary: Paginated list of images missing EXIF date or GPS
-      operationId: getMissingExif
-      parameters:
-        - name: page
-          in: query
-          schema:
-            type: integer
-            default: 1
-        - name: page_size
-          in: query
-          schema:
-            type: integer
-            default: 50
-      responses:
-        "200":
-          description: Paginated list
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/MissingExifResponse"
-
   /exif/gps:
     put:
       summary: Write GPS coordinates to a single image
@@ -124,16 +101,12 @@ paths:
       summary: Suggest locations from same-day photos with GPS
       operationId: getLocationCandidates
       parameters:
-        - name: path
-          in: query
-          schema:
-            type: string
-          description: Image file path (uses its date_taken)
         - name: date
           in: query
+          required: true
           schema:
             type: string
-          description: Date in YYYY-MM-DD format
+          description: Date in YYYY-MM-DD format (provided by external service)
       responses:
         "200":
           description: Location candidates
@@ -141,6 +114,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/LocationCandidatesResponse"
+        "400":
+          description: Missing or invalid date parameter
 
 components:
   schemas:
@@ -161,25 +136,6 @@ components:
         software: { type: string }
         gpsLatitude: { type: number }
         gpsLongitude: { type: number }
-
-    MissingExifResponse:
-      type: object
-      properties:
-        items:
-          type: array
-          items:
-            type: object
-            properties:
-              id: { type: integer }
-              path: { type: string }
-              fileName: { type: string }
-              dirPath: { type: string }
-              size: { type: integer }
-              missingDate: { type: boolean }
-              missingGps: { type: boolean }
-        totalItems: { type: integer }
-        currentPage: { type: integer }
-        pageSize: { type: integer }
 
     GPSRequest:
       type: object
