@@ -99,7 +99,7 @@ func (h *Handler) HandleUpdateGPS(c *gin.Context) {
 	}
 
 	osPath := filepath.FromSlash(req.Path)
-	if err := h.gpsWriter.WriteGPS(osPath, req.Latitude, req.Longitude, nil); err != nil {
+	if err := h.gpsWriter.WriteGPS(osPath, req.Latitude, req.Longitude, nil, req.BackupDir); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -124,7 +124,7 @@ func (h *Handler) HandleBatchUpdateGPS(c *gin.Context) {
 
 	for _, item := range req.Items {
 		osPath := filepath.FromSlash(item.Path)
-		if err := h.gpsWriter.WriteGPS(osPath, item.Latitude, item.Longitude, nil); err != nil {
+		if err := h.gpsWriter.WriteGPS(osPath, item.Latitude, item.Longitude, nil, req.BackupDir); err != nil {
 			failedCount++
 			failedFiles = append(failedFiles, item.Path)
 			continue

@@ -51,7 +51,7 @@ func main() {
 	fmt.Println("exiftool initialized!")
 
 	// Initialize GPS writer
-	gpsWriter := application.NewGPSWriter(cfg.TrashDir)
+	gpsWriter := application.NewGPSWriter()
 
 	// Initialize MCP server
 	mcpHTTPHandler := exifmcp.NewHTTPHandler(exifSvc, gpsWriter)

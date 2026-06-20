@@ -139,11 +139,12 @@ components:
 
     GPSRequest:
       type: object
-      required: [path]
+      required: [path, backupDir]
       properties:
         path: { type: string }
         latitude: { type: number }
         longitude: { type: number }
+        backupDir: { type: string, description: Directory where a backup copy of the original file will be stored before modification }
 
     GPSResponse:
       type: object
@@ -154,7 +155,7 @@ components:
 
     GPSBatchRequest:
       type: object
-      required: [items]
+      required: [items, backupDir]
       properties:
         items:
           type: array
@@ -165,6 +166,7 @@ components:
               path: { type: string }
               latitude: { type: number }
               longitude: { type: number }
+        backupDir: { type: string, description: Directory where backup copies of the original files will be stored before modification }
 
     GPSBatchResponse:
       type: object

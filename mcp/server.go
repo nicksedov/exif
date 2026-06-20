@@ -183,8 +183,9 @@ func (s *Server) registerWriteTools() {
 				"path":      map[string]any{"type": "string", "description": "Absolute path to the image file"},
 				"latitude":  map[string]any{"type": "number", "description": "GPS latitude (-90 to 90)"},
 				"longitude": map[string]any{"type": "number", "description": "GPS longitude (-180 to 180)"},
+				"backup_dir": map[string]any{"type": "string", "description": "Directory where a backup copy of the original file will be stored before modification"},
 			},
-			"required": []string{"path", "latitude", "longitude"},
+			"required": []string{"path", "latitude", "longitude", "backup_dir"},
 		},
 	}, s.handleWriteGPS)
 
@@ -265,12 +266,13 @@ func (s *Server) handleWriteGPS(ctx context.Context, req *mcp.CallToolRequest) (
 		Path      string  `json:"path"`
 		Latitude  float64 `json:"latitude"`
 		Longitude float64 `json:"longitude"`
+		BackupDir string  `json:"backup_dir"`
 	}
 	if err := json.Unmarshal(req.Params.Arguments, &args); err != nil {
 		return nil, fmt.Errorf("invalid arguments: %w", err)
 	}
 
-	if err := s.gpsWriter.WriteGPS(args.Path, args.Latitude, args.Longitude, nil); err != nil {
+	if err := s.gpsWriter.WriteGPS(args.Path, args.Latitude, args.Longitude, nil, args.BackupDir); err != nil {
 		return nil, fmt.Errorf("GPS write failed: %w", err)
 	}
 

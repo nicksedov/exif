@@ -17,18 +17,17 @@ import (
 const trashTimestampFormat = "20060102_150405"
 
 // GPSWriter handles GPS coordinate writing to image EXIF metadata.
-type GPSWriter struct {
-	trashDir string
-}
+type GPSWriter struct{}
 
-// NewGPSWriter creates a new GPS writer with the given trash directory.
-func NewGPSWriter(trashDir string) *GPSWriter {
-	return &GPSWriter{trashDir: trashDir}
+// NewGPSWriter creates a new GPS writer.
+func NewGPSWriter() *GPSWriter {
+	return &GPSWriter{}
 }
 
 // WriteGPS backs up the original file and writes GPS coordinates to its EXIF metadata.
 // Uses a 3-attempt strategy: direct write, strip InteropIFD + retry, nuclear strip + restore.
-func (w *GPSWriter) WriteGPS(filePath string, lat, lng float64, meta *domain.ImageMetadata) error {
+// backupDir is the directory where the backup copy is stored before modification.
+func (w *GPSWriter) WriteGPS(filePath string, lat, lng float64, meta *domain.ImageMetadata, backupDir string) error {
 	// Validate coordinates
 	if lat < -90 || lat > 90 {
 		return fmt.Errorf("invalid latitude: %f (must be between -90 and 90)", lat)
@@ -42,7 +41,7 @@ func (w *GPSWriter) WriteGPS(filePath string, lat, lng float64, meta *domain.Ima
 		return fmt.Errorf("GPS can only be written to JPEG files, got: %s", ext)
 	}
 
-	backupPath, backupErr := createBackup(filePath, w.trashDir)
+	backupPath, backupErr := createBackup(filePath, backupDir)
 	if backupErr != nil {
 		return fmt.Errorf("failed to create backup: %w", backupErr)
 	}

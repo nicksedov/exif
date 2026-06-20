@@ -32,11 +32,13 @@ type GPSRequest struct {
 	Path      string  `json:"path" binding:"required"`
 	Latitude  float64 `json:"latitude"`
 	Longitude float64 `json:"longitude"`
+	BackupDir string  `json:"backupDir" binding:"required"`
 }
 
 // GPSBatchRequest is the JSON request for PUT /exif/gps/batch
 type GPSBatchRequest struct {
-	Items []GPSBatchItem `json:"items" binding:"required"`
+	Items     []GPSBatchItem `json:"items" binding:"required"`
+	BackupDir string         `json:"backupDir" binding:"required"`
 }
 
 // GPSBatchItem represents a single item in a batch GPS request

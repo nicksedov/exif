@@ -41,6 +41,7 @@ Write GPS coordinates to image EXIF using 3-attempt strategy with backup.
 | `path` | string | yes | Absolute path to the image file |
 | `latitude` | number | yes | GPS latitude (-90 to 90) |
 | `longitude` | number | yes | GPS longitude (-180 to 180) |
+| `backup_dir` | string | yes | Directory where a backup copy of the original file will be stored before modification |
 
 ### write_exif_field
 Write arbitrary EXIF tag value.

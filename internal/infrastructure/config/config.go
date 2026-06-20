@@ -16,7 +16,6 @@ type Config struct {
 	ServerHost string
 	ServerPort string
 
-	TrashDir string
 	LogLevel string
 }
 
@@ -31,7 +30,6 @@ func Load() *Config {
 		DBSSLMode:  getEnv("DB_SSLMODE", "disable"),
 		ServerHost: getEnv("SERVER_HOST", "0.0.0.0"),
 		ServerPort: getEnv("SERVER_PORT", "5171"),
-		TrashDir:   getEnv("TRASH_DIR", "./trash"),
 		LogLevel:   getEnv("LOG_LEVEL", "info"),
 	}
 }
