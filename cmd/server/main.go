@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 
 	"exif-service/internal/application"
 	"exif-service/internal/infrastructure/config"
@@ -19,12 +18,6 @@ import (
 	"exif-service/internal/interfaces/handler"
 	exifmcp "exif-service/mcp"
 )
-
-func init() {
-	if err := godotenv.Load(); err != nil {
-		log.Print("No .env file found")
-	}
-}
 
 func main() {
 	cfg := config.Load()

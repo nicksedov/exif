@@ -5,7 +5,6 @@ go 1.25.0
 require (
 	github.com/barasher/go-exiftool v1.3.0
 	github.com/gin-gonic/gin v1.12.0
-	github.com/joho/godotenv v1.5.1
 	github.com/modelcontextprotocol/go-sdk v1.6.1
 	golang.org/x/image v0.43.0
 	gorm.io/driver/postgres v1.5.4

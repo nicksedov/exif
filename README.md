@@ -49,7 +49,7 @@ docs/                — OpenAPI spec and MCP tool documentation
 
 ### Environment Variables
 
-Copy `.env.example` to `.env` and adjust as needed:
+Set the following environment variables before starting the service:
 
 | Variable      | Default        | Description                   |
 | ------------- | -------------- | ----------------------------- |
@@ -81,7 +81,13 @@ go run ./cmd/server/
 docker build -t exif-service .
 
 # Run the container
-docker run -p 5171:5171 --env-file .env exif-service
+docker run -p 5171:5171 \
+  -e DB_HOST=host.docker.internal \
+  -e DB_PORT=5432 \
+  -e DB_USER=postgres \
+  -e DB_PASSWORD=postgres \
+  -e DB_NAME=image_toolkit \
+  exif-service
 ```
 
 ## API Endpoints
