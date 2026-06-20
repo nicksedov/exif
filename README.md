@@ -51,18 +51,17 @@ docs/                — OpenAPI spec and MCP tool documentation
 
 Set the following environment variables before starting the service:
 
-| Variable      | Default        | Description                   |
-| ------------- | -------------- | ----------------------------- |
-| `DB_HOST`     | `localhost`    | PostgreSQL host               |
-| `DB_PORT`     | `5432`         | PostgreSQL port               |
-| `DB_USER`     | `postgres`     | Database user                 |
-| `DB_PASSWORD` | `postgres`     | Database password             |
-| `DB_NAME`     | `image_toolkit`| Database name                 |
-| `DB_SSLMODE`  | `disable`      | SSL mode                      |
-| `SERVER_HOST` | `0.0.0.0`     | Server bind address           |
-| `SERVER_PORT` | `5171`         | Server port                   |
-| `TRASH_DIR`   | `./trash`      | Directory for trashed files   |
-| `LOG_LEVEL`   | `info`         | Logging level                 |
+| Variable         | Default        | Description                   |
+| ---------------- | -------------- | ----------------------------- |
+| `DB_HOST`        | `localhost`    | PostgreSQL host               |
+| `DB_PORT`        | `5432`         | PostgreSQL port               |
+| `DB_USER`        | `postgres`     | Database user                 |
+| `DB_PASSWORD`    | `postgres`     | Database password             |
+| `DB_NAME`        | `image_toolkit`| Database name                 |
+| `DB_SSLMODE`     | `disable`      | SSL mode                      |
+| `EXIF_HOST`      | `0.0.0.0`      | Server bind address           |
+| `EXIF_PORT`      | `5172`         | Server port                   |
+| `EXIF_LOG_LEVEL` | `info`         | Logging level                 |
 
 ### Run Locally
 
@@ -81,7 +80,7 @@ go run ./cmd/server/
 docker build -t exif-service .
 
 # Run the container
-docker run -p 5171:5171 \
+docker run -p 5172:5172 \
   -e DB_HOST=host.docker.internal \
   -e DB_PORT=5432 \
   -e DB_USER=postgres \

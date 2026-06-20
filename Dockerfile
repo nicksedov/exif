@@ -24,6 +24,6 @@ WORKDIR /app
 
 COPY --from=builder /exif-service .
 
-EXPOSE 5171
+EXPOSE 5172
 
 CMD ["./exif-service"]

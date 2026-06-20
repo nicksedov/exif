@@ -28,8 +28,8 @@ func Load() *Config {
 		DBPassword: getEnv("DB_PASSWORD", "postgres"),
 		DBName:     getEnv("DB_NAME", "image_toolkit"),
 		DBSSLMode:  getEnv("DB_SSLMODE", "disable"),
-		ServerHost: getEnv("SERVER_HOST", "0.0.0.0"),
-		ServerPort: getEnv("SERVER_PORT", "5171"),
+		ServerHost: getEnv("EXIF_HOST", "0.0.0.0"),
+		ServerPort: getEnv("EXIF_PORT", "5172"),
 		LogLevel:   getEnv("LOG_LEVEL", "info"),
 	}
 }
