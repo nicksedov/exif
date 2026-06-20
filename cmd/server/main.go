@@ -1,9 +1,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -63,10 +68,32 @@ func main() {
 	fmt.Println("MCP endpoint: /exif/mcp")
 	fmt.Println("Press Ctrl+C to stop")
 
-	if err := router.Run(fmt.Sprintf("%s:%s", cfg.ServerHost, cfg.ServerPort)); err != nil {
-		log.Fatalf("Failed to start server: %v", err)
+	addr := fmt.Sprintf("%s:%s", cfg.ServerHost, cfg.ServerPort)
+	srv := &http.Server{
+		Addr:    addr,
+		Handler: router,
 	}
-}
 
-// unused but needed for type resolution
-var _ http.Handler
+	// Start server in a goroutine
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Failed to start server: %v", err)
+		}
+	}()
+
+	// Wait for interrupt signal (SIGINT / SIGTERM)
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	sig := <-quit
+	fmt.Printf("\nReceived signal %s, shutting down gracefully...\n", sig)
+
+	// Graceful shutdown with a 10-second timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Printf("Server forced to shutdown: %v", err)
+	}
+
+	fmt.Println("Server stopped.")
+}
